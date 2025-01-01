@@ -4,11 +4,14 @@ const filter = async (req, res) => {
     try {
         console.log({ res, req });
         const tasks = await TasksSchema.find().populate('user').lean();
+        const list = tasks.map(task => new TasksDTO(task))
+        res.mergeData(list)
         console.log({ tasks })
         res.mergeData(tasks)
     } catch (error) {
-        // res.add
+        res.addInternalServerException(error.message)
     }
+    return res
 }
 const create = async (req, res) => {
     try {
@@ -31,12 +34,26 @@ const create = async (req, res) => {
     }
     return res
 }
-const update =(req, res) =>{
+const update = async (req, res) =>{
     try {
-        // let task = TasksSchema.findByIdAndUpdate(req.id, req.body)
+        console.log("check res: ", req.param.id, req.body, req)
+        // let task = await TasksSchema.findByIdAndUpdate(req.param.id,{$set:req.body},{new:true})
+        let task = await TasksSchema.findByIdAndUpdate(req.param.id, {$set: req.body},{new:true})
+
+        res.mergeData(new TasksDTO(task))
 
     } catch (error) {
         res.addInternalServerException(error.message)
     }
+    return res;
 }
-module.exports = { filter, create }
+const remove = async (req, res) => {
+    try {
+        let task = await TasksSchema.findByIdAndDelete(req.param.id)
+        res.mergeData(new TasksDTO(task))
+    } catch (error) {
+        res.addInternalServerException(error.message)
+    }
+    return res
+}
+module.exports = { filter, create, update, remove }
